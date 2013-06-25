@@ -1,0 +1,988 @@
+<modification>
+	<id>Dependent Options for OpenCart 1.5.1.3, 1.5.2.x</id>
+	<version>1.1.6</version>
+	<vqmver>2.1.7</vqmver>
+	<author>Ryan (rph) - OpenCartHelp.com</author>
+	<file name="admin/controller/catalog/option.php">
+		<operation error="abort">
+			<search position="before"><![CDATA[if (isset($this->error['option_value'])) {]]></search>
+			<add><![CDATA[		if (isset($this->error['dependent_option_value'])) {
+			$this->data['error_dependent_option_value'] = $this->error['dependent_option_value'];
+		} else {
+			$this->data['error_dependent_option_value'] = array();
+		}
+
+		if (isset($this->error['dependent_option_type'])) {
+			$this->data['error_dependent_option_type'] = $this->error['dependent_option_type'];
+		} else {
+			$this->data['error_dependent_option_type'] = '';
+		}
+		]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[$this->data['option_values'] = array();]]></search>
+			<add><![CDATA[		if (isset($this->request->post['parent_option_values'])) {
+			$this->data['parent_option_values'] = $this->request->post['parent_option_values'];
+		} elseif (isset($this->request->get['option_id'])) {
+			$this->data['parent_option_values'] = $this->model_catalog_option->getParentOptionValues($this->request->get['option_id']);
+		} else {
+			$this->data['parent_option_values'] = array();
+		}
+
+		$option_value_ids = array();
+		]]></add>
+		</operation>
+		<!-- 1.5.1.3 -->
+		<operation error="abort">
+			<search position="replace" offset="7"><![CDATA[$this->data['option_values'][] = array(]]></search>
+			<add><![CDATA[$this->data['option_values'][] = array(
+				'option_value_id'          => $option_value['option_value_id'],
+				'option_value_description' => $option_value['option_value_description'],
+				'image'                    => $image,
+				'thumb'                    => $this->model_tool_image->resize($image, 100, 100),
+				'sort_order'               => $option_value['sort_order']
+			);
+
+			$option_value_ids[] = $option_value['option_value_id'];
+		}
+
+		$missing_option_values = array_diff($this->data['parent_option_values'], $option_value_ids);
+
+		if ($missing_option_values) {
+			$option_value_data = $this->model_catalog_option->getOptionValueDescriptions(false, $missing_option_values);
+
+			foreach ($option_value_data as $option_value) {
+				if ($option_value['image'] && file_exists(DIR_IMAGE . $option_value['image'])) {
+					$image = $option_value['image'];
+				} else {
+					$image = 'no_image.jpg';
+				}
+
+				$this->data['option_values'][] = array(
+					'option_value_id'          => $option_value['option_value_id'],
+					'option_value_description' => $option_value['option_value_description'],
+					'image'                    => $image,
+					'thumb'                    => $this->model_tool_image->resize($image, 100, 100),
+					'sort_order'               => $option_value['sort_order']
+				);
+			}
+		}]]></add>
+		</operation>
+		<!-- // -->
+		<!-- 1.5.0.x to 1.5.1.2 -->
+		<!--<operation error="skip">
+			<search position="replace" offset="5"><![CDATA[$this->data['option_values'] = $this->request->post['option_value'];]]></search>
+			<add><![CDATA[$option_values = $this->request->post['option_value'];
+		} elseif (isset($this->request->get['option_id'])) {
+			$option_values = $this->model_catalog_option->getOptionValueDescriptions($this->request->get['option_id']);
+		} else {
+			$option_values = array();
+		}
+
+		if (isset($this->request->post['parent_option_values'])) {
+			$this->data['parent_option_values'] = $this->request->post['parent_option_values'];
+		} elseif (isset($this->request->get['option_id'])) {
+			$this->data['parent_option_values'] = $this->model_catalog_option->getParentOptionValues($this->request->get['option_id']);
+		} else {
+			$this->data['parent_option_values'] = array();
+		}
+
+		$option_value_ids = array();
+
+		$this->data['option_values'] = array();
+
+		foreach ($option_values as $option_value) {
+			$this->data['option_values'][] = array(
+				'option_value_id'          => $option_value['option_value_id'],
+				'option_value_description' => $option_value['option_value_description'],
+				'sort_order'               => $option_value['sort_order']
+			);
+
+			$option_value_ids[] = $option_value['option_value_id'];
+		}
+
+		$missing_option_values = array_diff($this->data['parent_option_values'], $option_value_ids);
+
+		if ($missing_option_values) {
+			$option_value_data = $this->model_catalog_option->getOptionValueDescriptions(false, $missing_option_values);
+
+			foreach ($option_value_data as $option_value) {
+				$this->data['option_values'][] = array(
+					'option_value_id'          => $option_value['option_value_id'],
+					'option_value_description' => $option_value['option_value_description'],
+					'sort_order'               => $option_value['sort_order']
+				);
+			}
+		}]]></add>
+		</operation>-->
+		<!-- // -->
+		<operation error="abort">
+			<search position="before"><![CDATA[foreach ($this->request->post['option_value'] as $option_value_id => $option_value) {]]></search>
+			<add><![CDATA[			$form_option_values = array();
+			]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace" offset="1"><![CDATA[$this->error['option_value'][$option_value_id][$language_id] = $this->language->get('error_option_value');]]></search>
+			<add><![CDATA[$this->error['option_value'][$option_value_id][$language_id] = $this->language->get('error_option_value'); 
+					}
+				}
+
+				$form_option_values[] = $option_value['option_value_id'];
+			}
+
+			if (isset($this->request->post['parent_option_values'])) {
+				foreach (array_diff($this->request->post['parent_option_values'], $form_option_values) as $option_value_id) {
+					$this->error['dependent_option_value'][$option_value_id] = $this->language->get('error_dependent_option_value');
+				}
+
+				if ($this->request->post['type'] !== 'select') {
+					$this->error['dependent_option_type'] = $this->language->get('error_dependent_option_type');]]></add>
+		</operation>
+	</file>
+	<file name="admin/controller/catalog/product.php">
+		<operation error="abort">
+			<search position="after"><![CDATA[$this->data['tab_design']]]></search>
+			<add><![CDATA[
+		// Dependent Options
+		$this->data['text_parent_select'] = $this->language->get('text_parent_select');
+		$this->data['entry_parent_option'] = $this->language->get('entry_parent_option');
+		$this->data['entry_parent_option_value'] = $this->language->get('entry_parent_option_value');
+		$this->data['error_option_value_load_failure'] = $this->language->get('error_option_value_load_failure');
+
+		// Dependent Option errors
+		if (isset($this->error['duplicate_option'])) {
+			$this->data['error_duplicate_option'] = $this->error['duplicate_option'];
+		} else {
+			$this->data['error_duplicate_option'] = array();
+		}
+
+		if (isset($this->error['duplicate_option_value'])) {
+			$this->data['error_duplicate_option_value'] = $this->error['duplicate_option_value'];
+		} else {
+			$this->data['error_duplicate_option_value'] = array();
+		}
+
+		if (isset($this->error['parent_option_recursion'])) {
+			$this->data['error_parent_option_recursion'] = $this->error['parent_option_recursion'];
+		} else {
+			$this->data['error_parent_option_recursion'] = array();
+		}
+
+		if (isset($this->error['ajax_option_value_failure'])) {
+			$this->data['error_ajax_option_value_failure'] = $this->error['ajax_option_value_failure'];
+		} else {
+			$this->data['error_ajax_option_value_failure'] = array();
+		}
+
+		if (isset($this->error['no_option_values_set'])) {
+			$this->data['error_no_option_values_set'] = $this->error['no_option_values_set'];
+		} else {
+			$this->data['error_no_option_values_set'] = array();
+		}
+
+		if (isset($this->error['no_parent_option_values_set'])) {
+			$this->data['error_no_parent_option_values_set'] = $this->error['no_parent_option_values_set'];
+		} else {
+			$this->data['error_no_parent_option_values_set'] = array();
+		}
+
+		if (isset($this->error['required_option_parents'])) {
+			$this->data['error_required_option_parents'] = $this->error['required_option_parents'];
+		} else {
+			$this->data['error_required_option_parents'] = '';
+		}
+
+		if (isset($this->error['missing_option'])) {
+			$this->data['error_missing_option'] = $this->error['missing_option'];
+		} else {
+			$this->data['error_missing_option'] = array();
+		}
+
+		if (isset($this->error['parent_option_stock_level'])) {
+			$this->data['error_parent_option_stock_level'] = $this->error['parent_option_stock_level'];
+		} else {
+			$this->data['error_parent_option_stock_level'] = array();
+		}
+
+		if (isset($this->error['missing_option_value'])) {
+			$this->data['error_missing_option_value'] = $this->error['missing_option_value'];
+		} else {
+			$this->data['error_missing_option_value'] = array();
+		}]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after"><![CDATA[$product_option_value_data = array();]]></search>
+			<add><![CDATA[
+				// In case user tries to add a product option with no option values
+				if (!isset($product_option['product_option_value'])) {
+					$product_option['product_option_value'] = array();
+				}]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after"><![CDATA[=> $product_option_value['points_prefix'],]]></search>
+			<add><![CDATA[						'parent_option_value'     => (isset($product_option_value['parent_option_value']) ? $product_option_value['parent_option_value'] : array()), // Dependent Options]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after"><![CDATA[=> $product_option_value_data,]]></search>
+			<add><![CDATA[					'parent_option_id'     => (isset($product_option['parent_option_id']) ? $product_option['parent_option_id'] : false), // Dependent Options]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace"><![CDATA[=> $product_option_value['option_value_id'],]]></search>
+			<add><![CDATA[=> (isset($product_option_value['option_value_id']) ? $product_option_value['option_value_id'] : false),]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[$this->load->model('sale/customer_group');]]></search>
+			<add><![CDATA[		$this->load->model('catalog/option');
+
+		$this->data['select_options'] = $this->model_catalog_option->getSelectTypeOptions();
+		$this->data['select_option_values'] = $this->model_catalog_option->getSelectTypeOptionValues();
+		]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[if ($this->error && !isset($this->error['warning'])) {]]></search>
+			<add><![CDATA[		/// Dependent Options Validation
+		if (isset($this->request->post['product_option'])) {
+			$product_options = array();
+			$product_option_values = array();
+
+			$parent_option_values = array();
+
+			foreach ($this->request->post['product_option'] as $product_option) {
+				if ($product_option['type'] == 'select') {
+					if (isset($product_options[$product_option['option_id']])) {
+						// ERROR: Duplicate Option
+						$this->error['duplicate_option'][$product_option['option_id']] = $this->language->get('error_duplicate_option');
+					} else {
+						$product_options[$product_option['option_id']] = array(
+							'parent_option_id' => (!empty($product_option['parent_option_id']) ? $product_option['parent_option_id'] : false),
+							'required'         => ($product_option['required'] ? true : false),
+							'option_values'    => array()
+						);
+					}
+
+					if (empty($product_option['product_option_value'])) {
+						// ERROR: No Option Values set
+						$this->error['no_option_values_set'][$product_option['option_id']] = $this->language->get('error_no_option_values_set');
+					} else {
+						foreach ($product_option['product_option_value'] as $product_option_value) {
+							if (!isset($product_option_value['option_value_id'])) {
+								// ERROR: Option Value was not populated because of OpenCart pre-1.5.2 AJAX issue
+								$this->error['ajax_option_value_failure'][$product_option['option_id']] = $this->language->get('error_ajax_option_value_failure');
+							} else {
+								if (isset($product_option_values[$product_option_value['option_value_id']])) {
+									// ERROR: Duplicate Option Values
+									$this->error['duplicate_option_value'][$product_option_value['option_value_id']] = $this->language->get('error_duplicate_option_value');
+								} else {
+									$product_option_values[$product_option_value['option_value_id']] = array(
+										'option_id'           => $product_option['option_id'],
+										'subtract'            => $product_option_value['subtract'],
+										'quantity'            => $product_option_value['quantity'],
+										'parent_option_value' => (isset($product_option_value['parent_option_value']) ? $product_option_value['parent_option_value'] : false)
+									);
+
+									$product_options[$product_option['option_id']]['option_values'][] = $product_option_value['option_value_id'];
+
+									if (isset($product_option_value['parent_option_value'])) {
+										if (isset($parent_option_values[$product_option['option_id']])) {
+											$parent_option_values[$product_option['option_id']] = array_unique(array_merge($parent_option_values[$product_option['option_id']], $product_option_value['parent_option_value']));
+										} else {
+											$parent_option_values[$product_option['option_id']] = $product_option_value['parent_option_value'];
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			foreach ($product_options as $option_id => $option_data) {
+				if ($option_data['parent_option_id'] && isset($product_options[$option_data['parent_option_id']]) && $product_options[$option_data['parent_option_id']]['parent_option_id'] == $option_id) {
+					// ERROR: Parent Option recursion
+					$this->error['parent_option_recursion'][$option_id] = $this->language->get('error_parent_option_recursion');
+					$this->error['parent_option_recursion'][$option_data['parent_option_id']] = $this->language->get('error_parent_option_recursion');
+				} else {
+					if ($option_data['parent_option_id'] && !array_key_exists($option_data['parent_option_id'], $product_options)) {
+						// ERROR: Parent Option not found in product
+						$this->error['missing_option'][$option_id] = $this->language->get('error_missing_option');
+					}
+				}
+			}
+
+			foreach ($product_option_values as $option_value_id => $option_value_data) {
+				if ($option_value_data['parent_option_value']) {
+					foreach ($option_value_data['parent_option_value'] as $parent_option_value_id) {
+						if (array_key_exists($parent_option_value_id, $product_option_values) === false) {
+							// ERROR: Parent Option Value not found in product
+							$this->error['missing_option_value'][$option_value_id] = $this->language->get('error_missing_option_value');
+						} else {
+							if ($product_options[$option_value_data['option_id']]['required'] === true) {
+								if (count($parent_option_values[$option_value_data['option_id']]) < 2) {
+									// ERROR: Required Options must have a total of at least two unique Parent Option Values
+									$this->error['required_option_parents'][$option_value_data['option_id']] = $this->language->get('error_required_option_parents');
+								} else {
+									if ($product_option_values[$parent_option_value_id]['subtract'] && $product_option_values[$parent_option_value_id]['quantity'] < 1) {
+										// ERROR: Parent Option Value cannot be out-of-stock
+										$this->error['parent_option_stock_level'][$option_value_id] = $this->language->get('error_parent_option_stock_level');
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		///
+		]]></add>
+		</operation>
+	</file>
+	<file name="admin/language/english/catalog/option.php">
+		<operation error="log">
+			<search position="after"><![CDATA[$_['error_product']]]></search>
+			<add><![CDATA[
+// Dependent Options
+$_['error_dependent_option_value'] = 'Warning: A product with dependent options currently has this option value<br/> set as a Parent Option Value!  You cannot delete a Parent Option Value!';
+$_['error_dependent_option_type']  = 'Warning: A product with dependent options currently has this option set a Parent Option!  Parent Options can only be set as \'Select\' type!';]]></add>
+		</operation>
+	</file>
+	<file name="admin/language/english/catalog/product.php">
+		<operation error="log">
+			<search position="after"><![CDATA[$_['error_model']]]></search>
+			<add><![CDATA[
+// Dependent Options
+$_['entry_parent_option']               = 'Parent Option:';
+$_['entry_parent_option_value']         = 'Parent Option Value:';
+$_['text_parent_select']                = 'Control + mouse-click to select or deselect multiple Parent Option Values.';
+$_['error_duplicate_option']            = 'You may only use an option once per product!';
+$_['error_duplicate_option_value']      = 'You may only use an option value once per product!';
+$_['error_parent_option_recursion']     = 'Parent option recursion!';
+$_['error_no_parent_option_values_set'] = 'You must enter at least 1 parent option value!';
+$_['error_no_option_values_set']        = 'You must enter at least 1 option value!';
+$_['error_required_option_parents']     = 'A required option must have at least 2 different parent option values!';
+$_['error_ajax_option_value_failure']   = 'OpenCart failed to properly load your product option values!  Please refresh the page and try again.';
+$_['error_option_value_load_failure']   = 'Option value load failure!';
+$_['error_parent_option_stock_level']   = 'A parent option value is out-of-stock!';
+$_['error_missing_option']              = 'You have set a parent option which does not exist in this product!';
+$_['error_missing_option_value']        = 'You have set a parent option value which does not exist in this product!';]]></add>
+		</operation>
+	</file>
+	<file name="admin/model/catalog/option.php">
+		<operation error="abort">
+			<search position="after" offset="3"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "option_value_description SET option_value_id = '" . (int)$option_value_id . "', language_id = '" . (int)$language_id . "', option_id = '" . (int)$option_id . "', name = '" . $this->db->escape($option_value_description['name']) . "'");]]></search>
+			<add><![CDATA[
+		$this->cache->delete('select_option');
+		$this->cache->delete('select_option_value');]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after" index="2"><![CDATA[$this->db->query("DELETE FROM " . DB_PREFIX . "option_value_description WHERE option_id = '" . (int)$option_id . "'");]]></search>
+			<add><![CDATA[
+		$this->cache->delete('select_option');
+		$this->cache->delete('select_option_value');]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace"><![CDATA[public function getOptionValueDescriptions($option_id) {]]></search>
+			<add><![CDATA[public function getOptionValueDescriptions($option_id, $option_value_ids = array()) {]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace"><![CDATA[$option_value_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "option_value WHERE option_id = '" . (int)$option_id . "'");]]></search>
+			<add><![CDATA[if (!empty($option_value_ids)) {
+			$option_value_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "option_value WHERE option_value_id IN (" . $this->db->escape(implode(',', $option_value_ids)) . ")");
+		} else {
+			$option_value_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "option_value WHERE option_id = '" . (int)$option_id . "'");
+		}]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[public function getTotalOptions()]]></search>
+			<add><![CDATA[	public function getParentOptionValues($option_id) {
+		$this->checkDependentOptionValueDb();
+
+		$parent_option_values = array();
+
+		$query = $this->db->query("SELECT DISTINCT parent_option_value_id FROM `" . DB_PREFIX . "dependent_option_value` WHERE parent_option_id = '" . (int)$option_id . "'");
+
+		foreach ($query->rows as $result) {
+			$parent_option_values[] = $result['parent_option_value_id'];
+		}
+
+		return $parent_option_values;
+	}
+
+	public function getSelectTypeOptions() {
+		$select_option_data = $this->cache->get('select_option.' . (int)$this->config->get('config_language_id'));
+
+		if (!$select_option_data) {
+			$db_structure = $this->db->query("DESCRIBE `" . DB_PREFIX . "option`");
+
+			foreach ($db_structure->rows as $column) {
+				if ($column['Field'] == 'type' && $column['Key'] == '') {
+					$this->db->query("ALTER TABLE `" . DB_PREFIX . "option` ADD INDEX (`type`)");
+				}
+			}
+
+			$query = $this->db->query("SELECT o.option_id, od.name FROM `" . DB_PREFIX . "option` o LEFT JOIN `" . DB_PREFIX . "option_description` od ON (o.option_id = od.option_id) WHERE o.type = 'select' AND od.language_id = '" . (int)$this->config->get('config_language_id') . "' ORDER BY o.sort_order ASC, od.name ASC");
+
+			$select_option_data = $query->rows;
+
+			$this->cache->set('select_option.' . (int)$this->config->get('config_language_id'), $select_option_data);
+		}
+
+		return $select_option_data;
+	}
+
+	public function getSelectTypeOptionValues() {
+		$select_option_value_data = $this->cache->get('select_option_value.' . (int)$this->config->get('config_language_id'));
+
+		if (!$select_option_value_data) {
+			$db_structure = $this->db->query("DESCRIBE `" . DB_PREFIX . "option`");
+
+			foreach ($db_structure->rows as $column) {
+				if ($column['Field'] == 'type' && $column['Key'] == '') {
+					$this->db->query("ALTER TABLE `" . DB_PREFIX . "option` ADD INDEX (`type`)");
+				}
+			}
+
+			$query = $this->db->query("SELECT ov.option_id, ov.option_value_id, ovd.name FROM `" . DB_PREFIX . "option_value` ov LEFT JOIN `" . DB_PREFIX . "option_value_description` ovd ON (ov.option_value_id = ovd.option_value_id) LEFT JOIN `" . DB_PREFIX . "option` o ON (ov.option_id = o.option_id) WHERE o.type = 'select' AND ovd.language_id = '" . (int)$this->config->get('config_language_id') . "' ORDER BY ov.sort_order ASC, ovd.name ASC");
+
+			$select_option_value_data = $query->rows;
+
+			$this->cache->set('select_option_value.' . (int)$this->config->get('config_language_id'), $select_option_value_data);
+		}
+
+		return $select_option_value_data;
+	}
+
+	private function checkDependentOptionDb() {
+		$query = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "dependent_option'");
+
+		if (!$query->rows) {
+			$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "dependent_option` (
+								`product_id` int(11) NOT NULL,
+								`parent_option_id` int(11) NOT NULL,
+								`child_option_id` int(11) NOT NULL,
+								`parent_product_option_id` int(11) NOT NULL,
+								`child_product_option_id` int(11) NOT NULL,
+								KEY `product_id` (`product_id`),
+								KEY `child_product_option_id` (`child_product_option_id`))
+								ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;");
+		}
+	}
+
+	private function checkDependentOptionValueDb() {
+		$query = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "dependent_option_value'");
+
+		if (!$query->rows) {
+			$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "dependent_option_value` (
+								`product_id` int(11) NOT NULL,
+								`parent_option_id` int(11) NOT NULL,
+								`child_option_id` int(11) NOT NULL,
+								`parent_option_value_id` int(11) NOT NULL,
+								`child_option_value_id` int(11) NOT NULL,
+								`parent_product_option_value_id` int(11) NOT NULL,
+								`child_product_option_value_id` int(11) NOT NULL,
+								KEY `product_id` (`product_id`),
+								KEY `parent_option_id` (`parent_option_id`))
+								ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;");
+		}
+	}
+	]]></add>
+		</operation>
+	</file>
+	<file name="admin/model/catalog/product.php">
+		<operation error="abort">
+			<search position="after" index="1,2"><![CDATA[if (isset($data['product_option'])) {]]></search>
+			<add><![CDATA[			// Dependent Options
+			$dependent_option = array();
+			$dependent_option_value = array();
+			]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after" index="1,2"><![CDATA[$product_option_id = $this->db->getLastId();]]></search>
+			<add><![CDATA[					$dependent_option[$product_option['option_id']] = $product_option_id; // Dependent Options]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "product_option_value SET product_option_id]]></search>
+			<add><![CDATA[
+							// Dependent Options
+							$product_option_value_id = $this->db->getLastId();
+							$dependent_option_value[$product_option_value['option_value_id']] = $product_option_value_id;]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after" offset="2"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "product_option SET product_id = '" . (int)$product_id . "', option_id = '" . (int)$product_option['option_id'] . "', option_value = '" . $this->db->escape($product_option['option_value']) . "', required = '" . (int)$product_option['required'] . "'");]]></search>
+			<add><![CDATA[
+			// Dependent Options
+			$this->checkDependentOptionDb();
+			$this->checkDependentOptionValueDb();
+
+			if (!empty($dependent_option)) {
+				foreach ($data['product_option'] as $product_option) {
+					if (isset($product_option['parent_option_id']) && !empty($product_option['parent_option_id'])) {
+						$this->db->query("INSERT INTO `" . DB_PREFIX . "dependent_option` SET product_id = '" . (int)$product_id . "', parent_option_id = '" . (int)$product_option['parent_option_id'] . "', child_option_id = '" . (int)$product_option['option_id'] . "', parent_product_option_id = '" . (int)$dependent_option[$product_option['parent_option_id']] . "', child_product_option_id = '" . (int)$dependent_option[$product_option['option_id']] . "'");
+					}
+
+					if (isset($product_option['product_option_value'])) {
+						foreach ($product_option['product_option_value'] as $product_option_value) {
+							if (isset($product_option_value['parent_option_value']) && !empty($product_option_value['parent_option_value'])) {
+								foreach ($product_option_value['parent_option_value'] as $parent_option_value_id) {
+									$this->db->query("INSERT INTO `" . DB_PREFIX . "dependent_option_value` SET product_id = '" . (int)$product_id . "', parent_option_id = '" . (int)$product_option['parent_option_id'] . "', child_option_id = '" . (int)$product_option['option_id'] . "', parent_option_value_id = '" . (int)$parent_option_value_id . "', child_option_value_id = '" . (int)$product_option_value['option_value_id'] . "', parent_product_option_value_id = '" . (int)$dependent_option_value[$parent_option_value_id] . "', child_product_option_value_id = '" . (int)$dependent_option_value[$product_option_value['option_value_id']] . "'");
+								}
+							}
+						}
+					}
+				}
+			}]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after" index="1,2"><![CDATA[$this->db->query("DELETE FROM " . DB_PREFIX . "product_option_value]]></search>
+			<add><![CDATA[		$this->db->query("DELETE FROM " . DB_PREFIX . "dependent_option WHERE product_id = '" . (int)$product_id . "'"); // Dependent Options
+		$this->db->query("DELETE FROM " . DB_PREFIX . "dependent_option_value WHERE product_id = '" . (int)$product_id . "'"); // Dependent Options]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "product_option_value SET product_option_value_id]]></search>
+			<add><![CDATA[
+							// Dependent Options
+							$product_option_value_id = $this->db->getLastId();
+							$dependent_option_value[$product_option_value['option_value_id']] = $product_option_value_id;]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after" offset="2"><![CDATA[$this->db->query("INSERT INTO " . DB_PREFIX . "product_option SET product_option_id = '" . (int)$product_option['product_option_id'] . "', product_id = '" . (int)$product_id . "', option_id = '" . (int)$product_option['option_id'] . "', option_value = '" . $this->db->escape($product_option['option_value']) . "', required = '" . (int)$product_option['required'] . "'");]]></search>
+			<add><![CDATA[
+			// Dependent Options
+			if (!empty($dependent_option)) {
+				foreach ($data['product_option'] as $product_option) {
+					if (isset($product_option['parent_option_id']) && !empty($product_option['parent_option_id'])) {
+						$this->db->query("INSERT INTO `" . DB_PREFIX . "dependent_option` SET product_id = '" . (int)$product_id . "', parent_option_id = '" . (int)$product_option['parent_option_id'] . "', child_option_id = '" . (int)$product_option['option_id'] . "', parent_product_option_id = '" . (int)$dependent_option[$product_option['parent_option_id']] . "', child_product_option_id = '" . (int)$dependent_option[$product_option['option_id']] . "'");
+					}
+
+					if (isset($product_option['product_option_value'])) {
+						foreach ($product_option['product_option_value'] as $product_option_value) {
+							if (isset($product_option_value['parent_option_value']) && !empty($product_option_value['parent_option_value'])) {
+								foreach ($product_option_value['parent_option_value'] as $parent_option_value_id) {
+									$this->db->query("INSERT INTO `" . DB_PREFIX . "dependent_option_value` SET product_id = '" . (int)$product_id . "', parent_option_id = '" . (int)$product_option['parent_option_id'] . "', child_option_id = '" . (int)$product_option['option_id'] . "', parent_option_value_id = '" . (int)$parent_option_value_id . "', child_option_value_id = '" . (int)$product_option_value['option_value_id'] . "', parent_product_option_value_id = '" . (int)$dependent_option_value[$parent_option_value_id] . "', child_product_option_value_id = '" . (int)$dependent_option_value[$product_option_value['option_value_id']] . "'");
+								}
+							}
+						}
+					}
+				}
+			}]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[$product_option_data = array();]]></search>
+			<add><![CDATA[		$this->checkDependentOptionDb();
+		$this->checkDependentOptionValueDb();
+		]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after"><![CDATA[foreach ($product_option_value_query->rows as $product_option_value)]]></search>
+			<add><![CDATA[					$parent_option_value_data = $this->getParentOptionValues($product_id, $product_option_value['product_option_value_id']); // Dependent Options]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after"><![CDATA[=> $product_option_value['points_prefix'],]]></search>
+			<add><![CDATA[						'parent_option_value'     => $parent_option_value_data, // Dependent Options]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before" index="1"><![CDATA[$product_option_data[] = array(]]></search>
+			<add><![CDATA[				$parent_option_id = $this->getParentOption($product_id, $product_option['product_option_id']); // Dependent Options
+			]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after"><![CDATA[=> $product_option_value_data,]]></search>
+			<add><![CDATA[					'parent_option_id'     => $parent_option_id, // Dependent Options]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[public function getProductImages($product_id)]]></search>
+			<add><![CDATA[	// Dependent Options
+	private function checkDependentOptionDb() {
+		$query = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "dependent_option'");
+
+		if (!$query->rows) {
+			$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "dependent_option` (
+								`product_id` int(11) NOT NULL,
+								`parent_option_id` int(11) NOT NULL,
+								`child_option_id` int(11) NOT NULL,
+								`parent_product_option_id` int(11) NOT NULL,
+								`child_product_option_id` int(11) NOT NULL,
+								KEY `product_id` (`product_id`),
+								KEY `child_product_option_id` (`child_product_option_id`))
+								ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;");
+		}
+	}
+
+	private function checkDependentOptionValueDb() {
+		$query = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "dependent_option_value'");
+
+		if (!$query->rows) {
+			$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "dependent_option_value` (
+								`product_id` int(11) NOT NULL,
+								`parent_option_id` int(11) NOT NULL,
+								`child_option_id` int(11) NOT NULL,
+								`parent_option_value_id` int(11) NOT NULL,
+								`child_option_value_id` int(11) NOT NULL,
+								`parent_product_option_value_id` int(11) NOT NULL,
+								`child_product_option_value_id` int(11) NOT NULL,
+								KEY `product_id` (`product_id`),
+								KEY `parent_option_id` (`parent_option_id`))
+								ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;");
+		}
+	}
+
+	public function getParentOption($product_id, $product_option_id) {
+		$this->checkDependentOptionDb();
+
+		$query = $this->db->query("SELECT parent_option_id FROM `" . DB_PREFIX . "dependent_option` WHERE product_id = '" . (int)$product_id . "' AND child_product_option_id = '" . (int)$product_option_id . "'");
+
+		if ($query->rows) {
+			return $query->row['parent_option_id'];
+		} else {
+			return '';
+		}
+	}
+
+	public function getParentOptionValues($product_id, $product_option_value_id) {
+		$this->checkDependentOptionValueDb();
+
+		$parent_option_values = array();
+
+		$query = $this->db->query("SELECT parent_option_value_id FROM `" . DB_PREFIX . "dependent_option_value` WHERE product_id = '" . (int)$product_id . "' AND child_product_option_value_id = '" . (int)$product_option_value_id . "'");
+
+		if ($query->rows) {
+			foreach ($query->rows as $result) {
+				$parent_option_values[] = $result['parent_option_value_id'];
+			}
+		}
+
+		return $parent_option_values;
+	}
+]]></add>
+		</operation>
+	</file>
+	<file name="admin/view/template/catalog/option_form.tpl">
+		<operation error="abort">
+			<search position="replace" index="1"><![CDATA[</select></td>]]></search>
+			<add><![CDATA[</select>
+              <?php if ($error_dependent_option_type) { ?>
+              <span class="error"><?php echo $error_dependent_option_type; ?></span>
+              <?php } ?></td>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[<table id="option-value" class="list">]]></search>
+			<add><![CDATA[        <?php foreach ($parent_option_values as $parent_option_value) { ?>
+        <input type="hidden" name="parent_option_values[]" value="<?php echo $parent_option_value; ?>" />
+        <?php } ?>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace" offset="1"><![CDATA[<span class="error"><?php echo $error_option_value[$option_value_row][$language['language_id']]; ?></span>]]></search>
+			<add><![CDATA[<span class="error"><?php echo $error_option_value[$option_value_row][$language['language_id']]; ?></span>
+                <?php } ?>
+                <?php } ?>
+                <?php if (isset($error_dependent_option_value[$option_value['option_value_id']])) { ?>
+                <span class="error"><?php echo $error_dependent_option_value[$option_value['option_value_id']]; ?></span>]]></add>
+		</operation>
+	</file>
+	<file name="admin/view/template/catalog/product_form.tpl">
+		<operation error="abort">
+			<search position="before" index="1" offset="1"><![CDATA[<?php echo $entry_required; ?>]]></search>
+			<add><![CDATA[              <?php if (isset($error_duplicate_option[$product_option['option_id']])) { ?>
+              <tr>
+                <td colspan="2"><span class="error"><?php echo $error_duplicate_option[$product_option['option_id']]; ?></span></td>
+              </tr>
+              <?php } ?>
+              <?php if (isset($error_ajax_option_value_failure[$product_option['option_id']])) { ?>
+              <tr>
+                <td colspan="2"><span class="error"><?php echo $error_ajax_option_value_failure[$product_option['option_id']]; ?></span></td>
+              </tr>
+              <?php } ?>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace" index="2" offset="2"><![CDATA[<option value="0" selected="selected"><?php echo $text_no; ?></option>]]></search>
+			<add><![CDATA[<option value="0" selected="selected"><?php echo $text_no; ?></option>
+                    <?php } ?>
+                  </select>
+                  <?php if (isset($error_required_option_parents[$product_option['option_id']])) { ?>
+                  <span class="error"><?php echo $error_required_option_parents[$product_option['option_id']]; ?></span>
+                  <?php } ?></td>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before" index="1"><![CDATA[<?php if ($product_option['type'] == 'text') { ?>]]></search>
+			<add><![CDATA[              <?php if ($product_option['type'] == 'select') { ?>
+              <tr>
+                <td><?php echo $entry_parent_option; ?></td>
+                <td><select id="parent-<?php echo $option_row; ?>" name="product_option[<?php echo $option_row; ?>][parent_option_id]">
+                    <option value=""><?php echo $text_none; ?></option>
+                    <?php foreach ($select_options as $select_option) { ?>
+                    <?php if ($select_option['option_id'] == $product_option['parent_option_id']) { ?>
+                    <option value="<?php echo $select_option['option_id']; ?>" selected="selected"><?php echo $select_option['name']; ?></option>
+                    <?php } else if ($select_option['option_id'] !== $product_option['option_id']) { ?>
+                    <option value="<?php echo $select_option['option_id']; ?>"><?php echo $select_option['name']; ?></option>
+                    <?php } ?>
+                    <?php } ?>
+                  </select>
+                  <?php if (isset($error_missing_option[$product_option['option_id']])) { ?>
+                  <span class="error"><?php echo $error_missing_option[$product_option['option_id']]; ?></span>
+                  <?php } ?>
+                  <?php if (isset($error_parent_option_recursion[$product_option['option_id']])) { ?>
+                  <span class="error"><?php echo $error_parent_option_recursion[$product_option['option_id']]; ?></span>
+                  <?php } ?></td>
+              </tr>
+              <tr>
+                <td colspan="2" style="border-bottom: none; padding-top: 10px;"><?php echo $text_parent_select; ?></td>
+              </tr>
+              <?php } ?>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after" index="2"><![CDATA[<?php echo $entry_subtract; ?>]]></search>
+			<add><![CDATA[                  <?php if ($product_option['type'] == 'select') { ?>
+                  <td class="left"><?php echo $entry_parent_option_value; ?></td>
+                  <?php } ?>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before" index="1"><![CDATA[<?php foreach ($product_option['product_option_value'] as $product_option_value) { ?>]]></search>
+			<add><![CDATA[              <?php if (isset($error_no_option_values_set[$product_option['option_id']])) { ?>
+              <span class="error"><?php echo $error_no_option_values_set[$product_option['option_id']]; ?></span>
+              <?php } ?>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace"><![CDATA[<input type="hidden" name="product_option[<?php echo $option_row; ?>][product_option_value][<?php echo $option_value_row; ?>][product_option_value_id]" value="<?php echo $product_option_value['product_option_value_id']; ?>" /></td>]]></search>
+			<add><![CDATA[<input type="hidden" name="product_option[<?php echo $option_row; ?>][product_option_value][<?php echo $option_value_row; ?>][product_option_value_id]" value="<?php echo $product_option_value['product_option_value_id']; ?>" />
+                    <?php if (isset($error_duplicate_option_value[$product_option_value['option_value_id']])) { ?>
+                    <span class="error"><?php echo $error_duplicate_option_value[$product_option_value['option_value_id']]; ?></span>
+                    <?php } ?>
+                    <?php if ($product_option_value['option_value_id'] === false) { ?>
+                    <span class="error"><?php echo $error_option_value_load_failure; ?></span>
+                    <?php } ?></td>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[<select name="product_option[<?php echo $option_row; ?>][product_option_value][<?php echo $option_value_row; ?>][price_prefix]">]]></search>
+			<add><![CDATA[                  <?php if ($product_option['type'] == 'select') { ?>
+                  <td class="left"><select id="child-<?php echo $option_value_row; ?>" name="product_option[<?php echo $option_row; ?>][product_option_value][<?php echo $option_value_row; ?>][parent_option_value][]" multiple="multiple">
+                      <?php foreach ($select_option_values as $select_option_value) { ?>
+                      <?php if (is_array($product_option_value['parent_option_value']) && in_array($select_option_value['option_value_id'], $product_option_value['parent_option_value'])) { ?>
+                      <option value="<?php echo $select_option_value['option_value_id']; ?>" class="<?php echo $select_option_value['option_id']; ?>" selected="selected"><?php echo $select_option_value['name']; ?></option>
+                      <?php } else { ?>
+                      <option value="<?php echo $select_option_value['option_value_id']; ?>" class="<?php echo $select_option_value['option_id']; ?>"><?php echo $select_option_value['name']; ?></option>
+                      <?php } ?>
+                      <?php } ?>
+                    </select>
+                    <?php if (isset($error_no_parent_option_values_set[$product_option_value['option_value_id']])) { ?>
+                    <span class="error"><?php echo $error_no_parent_option_values_set[$product_option_value['option_value_id']]; ?></span>
+                    <?php } ?>
+                    <?php if (isset($error_missing_option_value[$product_option_value['option_value_id']])) { ?>
+                    <span class="error"><?php echo $error_missing_option_value[$product_option_value['option_value_id']]; ?></span>
+                    <?php } ?>
+                    <?php if (isset($error_parent_option_stock_level[$product_option_value['option_value_id']])) { ?>
+                    <span class="error"><?php echo $error_parent_option_stock_level[$product_option_value['option_value_id']]; ?></span>
+                    <?php } ?></td>
+                  <?php } ?>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before" index="1"><![CDATA[<?php $option_value_row++; ?>]]></search>
+			<add><![CDATA[              <?php if ($product_option['type'] == 'select') { ?>
+              <script type="text/javascript"><!--
+              $('#child-<?php echo $option_value_row; ?>').chained('#parent-<?php echo $option_row; ?>');
+              //--></script>
+              <?php } ?>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace" index="1" regex="true"><![CDATA[~<td colspan="([6-9])"></td>~]]></search>
+			<add><![CDATA[<?php if ($product_option['type'] == 'select') { ?>
+                  <td colspan="<?php $i = $1; (int)$i++; echo $i; ?>"></td>
+                  <?php } else { ?>
+                  <td colspan="$1"></td>
+                  <?php } ?>]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace"><![CDATA[<a onclick="addOptionValue('<?php echo $option_row; ?>');" class="button">]]></search>
+			<add><![CDATA[<a onclick="addOptionValue('<?php echo $option_row; ?>', '<?php echo $product_option['type']; ?>');" class="button">]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before" offset="1"><![CDATA[if (ui.item.type == 'text') {]]></search>
+			<add><![CDATA[		if (ui.item.type == 'select') {
+		html += '     <tr>';
+		html += '       <td><?php echo $entry_parent_option; ?></td>';
+		html += '       <td><select id="parent-' + option_row + '" name="product_option[' + option_row + '][parent_option_id]">';
+		html += '           <option value=""><?php echo $text_none; ?></option>';
+		<?php foreach ($select_options as $select_option) { ?>
+		if (ui.item.value !== '<?php echo $select_option['option_id']; ?>') {
+		html += '           <option value="<?php echo $select_option['option_id']; ?>"><?php echo addslashes($select_option['name']); ?></option>';
+		}
+		<?php } ?>
+		html += '       </select></td>';
+		html += '     </tr>';
+		}]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after"><![CDATA[html += '        <td class="left"><?php echo $entry_subtract; ?></td>';]]></search>
+			<add><![CDATA[			if (ui.item.type == 'select') {
+			html += '        <td class="left"><?php echo $entry_parent_option_value; ?></td>';
+			}]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace" regex="true"><![CDATA[~html \+= '[ ]*<td colspan="([\d])"></td>';~]]></search>
+			<add><![CDATA[if (ui.item.type == 'select') {
+			html += '        <td colspan="<?php $i = $1; (int)$i++; echo $i; ?>"></td>';
+			} else {
+			html += '        <td colspan="$1"></td>';
+			}]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace"><![CDATA[<a onclick="addOptionValue(' + option_row + ');" class="button">]]></search>
+			<add><![CDATA[<a onclick="addOptionValue(\'' + option_row + '\', \'' + ui.item.type + '\');" class="button">]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="replace"><![CDATA[function addOptionValue(option_row)]]></search>
+			<add><![CDATA[function addOptionValue(option_row, type)]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[<td class="right"><select name="product_option[' + option_row + '][product_option_value][' + option_value_row + '][price_prefix]">]]></search>
+			<add><![CDATA[	if (type == 'select') {
+	html += '    <td class="left"><select id="child-' + option_value_row + '" name="product_option[' + option_row + '][product_option_value][' + option_value_row + '][parent_option_value][]" multiple="multiple">';
+	<?php foreach ($select_option_values as $select_option_value) { ?>
+	html += '      <option value="<?php echo $select_option_value['option_value_id']; ?>" class="<?php echo $select_option_value['option_id']; ?>" selected="selected"><?php echo addslashes($select_option_value['name']); ?></option>';
+	<?php } ?>
+	html += '    </select></td>';
+	}]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[$('#option-value' + option_row + ' tfoot').before(html);]]></search>
+			<add><![CDATA[	if (type == 'select') {
+	html += '<script type="text/javascript">';
+	html += '$(\'#child-' + option_value_row + '\').chained(\'#parent-' + option_row + '\');';
+	html += '</script>';
+	}
+	]]></add>
+		</operation>
+		<!-- Option Boost Compatibility -->
+		<operation error="skip">
+			<search position="replace"><![CDATA[<tr><td class="left"><?php echo $entry_info; ?></td><td colspan="8" class="left"><input name="product_option[<?php echo $option_row; ?>][product_option_value][<?php echo $option_value_row; ?>][ob_info]" value="<?php echo $product_option_value['ob_info']; ?>" size="100"></td></tr>]]></search>
+			<add><![CDATA[<?php if ($product_option['type'] == 'select') { ?>
+				<tr><td class="left"><?php echo $entry_info; ?></td><td colspan="9" class="left"><input name="product_option[<?php echo $option_row; ?>][product_option_value][<?php echo $option_value_row; ?>][ob_info]" value="<?php echo $product_option_value['ob_info']; ?>" size="100"></td></tr>
+			<?php } else { ?>
+				<tr><td class="left"><?php echo $entry_info; ?></td><td colspan="8" class="left"><input name="product_option[<?php echo $option_row; ?>][product_option_value][<?php echo $option_value_row; ?>][ob_info]" value="<?php echo $product_option_value['ob_info']; ?>" size="100"></td></tr>
+			<?php } ?>]]></add>
+		</operation>
+		<operation error="skip">
+			<search position="replace"><![CDATA[html += '  <tr><td class="left"><?php echo $entry_info; ?></td><td colspan="8" class="left"><input name="product_option[' + option_row + '][product_option_value][' + option_row + '][ob_info]" value="" size="100"></td></tr>';]]></search>
+			<add><![CDATA[if (type == 'select') {
+	html += '  <tr><td class="left"><?php echo $entry_info; ?></td><td colspan="9" class="left"><input name="product_option[' + option_row + '][product_option_value][' + option_row + '][ob_info]" value="" size="100"></td></tr>';
+	} else {
+	html += '  <tr><td class="left"><?php echo $entry_info; ?></td><td colspan="8" class="left"><input name="product_option[' + option_row + '][product_option_value][' + option_row + '][ob_info]" value="" size="100"></td></tr>';
+	}]]></add>
+		</operation>
+		<!-- // -->
+	</file>
+	<file name="admin/view/template/common/header.tpl">
+		<operation error="abort">
+			<search position="before"><![CDATA[<?php foreach ($scripts as $script) { ?>]]></search>
+			<add><![CDATA[<script type="text/javascript" src="view/javascript/jquery/jquery.chained.mini.js"></script>]]></add>
+		</operation>
+	</file>
+	<file name="catalog/controller/product/product.php">
+		<operation error="abort">
+			<search position="before"><![CDATA[$option_value_data[] = array(]]></search>
+			<add><![CDATA[
+							$dependent_option_value_data = $this->model_catalog_product->getDependentOptionValues($this->request->get['product_id'], $option_value['product_option_value_id']);
+		]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="after"><![CDATA[=> $option_value['option_value_id'],]]></search>
+			<add><![CDATA[								'parent'                    => $dependent_option_value_data,]]></add>
+		</operation>
+		<operation error="abort">
+			<search position="before"><![CDATA[if ($product_info['minimum']) {]]></search>
+			<add><![CDATA[			$this->data['chained_options'] = $this->model_catalog_product->getDependentOptions($this->request->get['product_id']);
+			]]></add>
+		</operation>
+	</file>
+	<file name="catalog/model/catalog/product.php">
+		<operation error="abort">
+			<search position="before"><![CDATA[public function getProductDiscounts($product_id)]]></search>
+			<add><![CDATA[	public function getDependentOptions($product_id) {
+		$this->checkDependentOptionDb();
+
+		$query = $this->db->query("SELECT parent_product_option_id AS parent, child_product_option_id AS child FROM `" . DB_PREFIX . "dependent_option` WHERE product_id = '" . (int)$product_id . "'");
+
+		return $query->rows;
+	}
+
+	public function getDependentOptionValues($product_id, $product_option_value_id) {
+		$this->checkDependentOptionValueDb();
+
+		$parent = array();
+
+		$query = $this->db->query("SELECT parent_product_option_value_id FROM `" . DB_PREFIX . "dependent_option_value` WHERE product_id = '" . (int)$product_id . "' AND child_product_option_value_id = '" . (int)$product_option_value_id . "'");
+
+		foreach ($query->rows as $value) {
+			$parent[] = $value['parent_product_option_value_id'];
+		}
+
+		$parent = implode(' ', $parent);
+
+		return $parent;
+	}
+
+	private function checkDependentOptionDb() {
+		$query = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "dependent_option'");
+
+		if (!$query->rows) {
+			$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "dependent_option` (
+								`product_id` int(11) NOT NULL,
+								`parent_option_id` int(11) NOT NULL,
+								`child_option_id` int(11) NOT NULL,
+								`parent_product_option_id` int(11) NOT NULL,
+								`child_product_option_id` int(11) NOT NULL,
+								KEY `product_id` (`product_id`),
+								KEY `child_product_option_id` (`child_product_option_id`))
+								ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;");
+		}
+	}
+
+	private function checkDependentOptionValueDb() {
+		$query = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "dependent_option_value'");
+
+		if (!$query->rows) {
+			$this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "dependent_option_value` (
+								`product_id` int(11) NOT NULL,
+								`parent_option_id` int(11) NOT NULL,
+								`child_option_id` int(11) NOT NULL,
+								`parent_option_value_id` int(11) NOT NULL,
+								`child_option_value_id` int(11) NOT NULL,
+								`parent_product_option_value_id` int(11) NOT NULL,
+								`child_product_option_value_id` int(11) NOT NULL,
+								KEY `product_id` (`product_id`),
+								KEY `parent_option_id` (`parent_option_id`))
+								ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin;");
+		}
+	}
+	]]></add>
+		</operation>
+	</file>
+	<file name="catalog/view/theme/*/template/common/header.tpl">
+		<operation error="abort">
+			<search position="before"><![CDATA[</head>]]></search>
+			<add><![CDATA[<script type="text/javascript" src="catalog/view/javascript/jquery/jquery.chained.mini.js"></script>]]></add>
+		</operation>
+	</file>
+	<file name="catalog/view/theme/*/template/product/product.tpl">
+		<operation error="abort">
+			<search position="before"><![CDATA[<?php echo $footer; ?>]]></search>
+			<add><![CDATA[<?php if ($chained_options) { ?>
+<script type="text/javascript"><!--
+<?php foreach ($chained_options as $chained_option) { ?>
+$('#option-<?php echo $chained_option['child']; ?>').chained('#option-<?php echo $chained_option['parent']; ?>');
+<?php } ?>
+//--></script>
+<?php } ?>]]></add>
+		</operation>
+		<!-- If using Shoppica/Shoppica2 theme change:   error="log"   to:   error="skip"   below -->
+		<operation error="log">
+			<search position="replace"><![CDATA[option value="<?php echo $option_value['product_option_value_id']; ?>"]]></search>
+			<add><![CDATA[option value="<?php echo $option_value['product_option_value_id']; ?>" <?php if ($option_value['parent']) { ?>class="<?php echo $option_value['parent']; ?>"<?php } ?>]]></add>
+		</operation>
+	</file>
+	<!-- Shoppica/Shoppica2 specific changes - SHOPPICA ASSISTANCE FROM NOW ON WILL *ONLY* BE AVAILABLE AS PAID SUPPORT! -->
+	<file name="catalog/view/theme/shoppica*/template/product/product_options.tpl" error="skip">
+		<operation error="log">
+			<search position="replace"><![CDATA[option value="<?php echo $option_value['product_option_value_id']; ?>"]]></search>
+			<add><![CDATA[option value="<?php echo $option_value['product_option_value_id']; ?>" <?php if ($option_value['parent']) { ?>class="<?php echo $option_value['parent']; ?>"<?php } ?>]]></add>
+		</operation>
+	</file>
+</modification>
